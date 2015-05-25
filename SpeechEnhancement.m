@@ -51,3 +51,12 @@ L = 10;   % number of Bartlett averaging windows;
 Y_bart_single = mean(Yk2s(:,1:L),2);
 % Compute all the Bartlett estimates
 Y_bart = Bartlett( y, Fs, 10 );
+% Compute noise PSD
+SigmaN2 = noise_estimation(Yk2s, PH0, alpha);
+
+% Plot noise and signal PSD
+figure;
+plot(f,Yk2s(1:NFFT/2+1,1000),'g',f,SigmaN2(1:NFFT/2+1,1000),'r'); 
+title('Single-Sided PSD of Y and N')
+xlabel('Frequency (Hz)')
+ylabel('PSD of Y and N')
