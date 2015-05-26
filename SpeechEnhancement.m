@@ -45,9 +45,11 @@ ylabel('Arg(Y(f))')
 phase = angle(Y);
 noisy_magnitude = abs(Y);
 % Compute Bartlett estimate
-windows = split_vector(y,20,10,Fs);
+windows = split_hamming(y,20,10,Fs);
 ffts = fft(windows,NFFT);
 magnitudes = abs(ffts);
+% store noisy phases for later
+phases = angle(ffts);
 Yk2s = magnitudes.^2;
 L = 10;   % number of Bartlett averaging windows;
 Y_bart_single = mean(Yk2s(:,1:L),2);
@@ -64,3 +66,11 @@ plot(f,Yk2s(1:NFFT/2+1,1000),'g',f,SigmaN2(1:NFFT/2+1,1000),'r');
 title('Single-Sided PSD of Y and N')
 xlabel('Frequency (Hz)')
 ylabel('PSD of Y and N')
+
+% Apply noise subtraction
+speech = NoiseSubtraction(Y_bart,SigmaN2,phases);
+% Overlap and Add to recreate speech signal
+filtered_speech = OverlapAdd(speech, 20, 10, Fs, size(y,1));
+% Listen to filtered speech
+player = audioplayer(filtered_speech,Fs);
+player.play;
