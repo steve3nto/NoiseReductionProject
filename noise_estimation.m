@@ -5,7 +5,7 @@
 % SigmaN2 is the estimated noise PSD for every time window l
 function SigmaN2 = noise_estimation(yk_2, PH0, alpha)
     % Keep first time window as noise
-    SigmaN2(:,1) = yk_2(:,1);
+     SigmaN2(:,1) = yk_2(:,1);
 
 %     SNR(:,2) = yk_2(:,2)./SigmaN2(:,1) - 1;
 %     pyH0(:,2) = exp(-abs(yk_2(:,2))./SigmaN2(:,1))./(SigmaN2(:,1).*pi);
