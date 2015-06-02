@@ -6,6 +6,7 @@ clc;
 
 noise = wavread('noise1');
 whitenoise = randn(size(noise));
+noise = .05*whitenoise;
 intersection = wavread('intersection_soundjay');
 Ts = 1/Fs;
 % Create noisy speech Y
@@ -63,8 +64,11 @@ ylabel('Arg(Y(f))')
 phase = angle(Y);
 noisy_magnitude = abs(Y);
 % Compute Bartlett estimate
-windows = split_hanning(y,20,10,Fs);
-ffts = fft(windows,2^10);
+split_length = 20;
+overlap_length = 10;
+windows = split_hanning(y,split_length,overlap_length,Fs);
+% ffts = fft(windows,2^10);
+ffts = fft(windows);
 magnitudes = abs(ffts);
 % store noisy phases for later
 phases = angle(ffts);
@@ -72,7 +76,7 @@ Yk2s = magnitudes.^2;
 L = 10;   % number of Bartlett averaging windows;
 Y_bart_single = mean(Yk2s(:,1:L),2);
 % Compute all the Bartlett estimates
-Y_bart = Bartlett( y, Fs, 10 );
+Y_bart = Bartlett( y, Fs, 10, split_length, overlap_length );
 % Compute noise PSD
 PH0 = 0.5;
 alpha = 0.8;
@@ -89,7 +93,7 @@ ylabel('PSD of Y and N')
 % Apply noise subtraction
 speech = NoiseSubtraction(Y_bart,SigmaN2,phases);
 % Overlap and Add to recreate speech signal
-filtered_speech = OverlapAdd(speech, 20, 10, Fs, size(y,1));
+filtered_speech = OverlapAdd(speech, split_length, overlap_length, Fs, size(y,1));
 % Listen to filtered speech
 player = audioplayer(filtered_speech,Fs);
 player.play;
@@ -97,8 +101,8 @@ player.play;
 
 %% Test code and debug
 % test overlap and add
-windows = split_hanning(y,20,10,Fs);
-filtered_speech = OverlapAdd(windows, 20, 10, Fs, size(y,1));
+windows = split_hanning(y,split_length,overlap_length,Fs);
+filtered_speech = OverlapAdd(windows, split_length, overlap_length, Fs, size(y,1));
 figure;
 plot(y);
 hold on;
@@ -108,7 +112,7 @@ plot(y - filtered_speech, 'r');
 P_clean = sum(clean.^2);
 P_noise = sum(noise.^2);
 SNR = 10*log10(P_clean / P_noise);
-PSD_noise = Bartlett( noise, Fs, 10 );
+PSD_noise = Bartlett( noise, Fs, 10,split_length,overlap_length );
 % Plot noise and signal PSD
 figure;
 plot(f,Y_bart(1:(2^10)/2+1,1000),'b');
@@ -120,7 +124,7 @@ ylabel('PSD of Y and N')
 
 speech = NoiseSubtraction(Y_bart,PSD_noise,phases);
 % Overlap and Add to recreate speech signal
-filtered_speech = OverlapAdd(speech, 20, 10, Fs, size(y,1));
+filtered_speech = OverlapAdd(speech, split_length, overlap_length, Fs, size(y,1));
 % Listen to filtered speech
 player = audioplayer(filtered_speech,Fs);
 player.play;
