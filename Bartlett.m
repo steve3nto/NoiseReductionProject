@@ -12,9 +12,8 @@ Yk2s = magnitudes.^2;
 for i=L:size(windows,2)
      Y_bart(:,i) = mean(Yk2s(:,i-L+1:i),2);
 end
-% Append the last 10 windows that could not be averaged
-% Y_bart = [Yk2s(:,1:L-1), Y_bart];
-Y_bart(:,1:L-1) = Yk2s(:,1:L-1);
+% Add the first L-1 windows that could not be averaged
+  Y_bart(:,1:L-1) = Yk2s(:,1:L-1);
 
 
 end

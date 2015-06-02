@@ -1,5 +1,5 @@
 function filtered_speech = OverlapAdd(speech, split_length,overlapping_length,fs, y_length)
-% OverlapAdd recreates speech signal from hamming-windowed speech
+% OverlapAdd recreates speech signal from hanning-windowed speech
 
     % Transform milliseconds to samples
     Ts = 1/fs;

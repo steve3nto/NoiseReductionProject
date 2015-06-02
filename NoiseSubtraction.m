@@ -3,7 +3,6 @@
 % speech is a matrix containing the windows of audio samples
 % that must be overlapped and added
 function speech = NoiseSubtraction(yk2_bart,Enk,phase)
-    % transform into decibels
     s_mag = (yk2_bart.^0.5).*(max(1 - Enk./yk2_bart, 0.2)).^0.5;  % to reduce musical noise
     sk = s_mag.*exp(phase.*sqrt(-1));
     speech=ifft(sk);    
