@@ -1,0 +1,18 @@
+Auditory-Modeling Toolbox (AMT)
+
+AMT depends on LTFAT.  You must first download LTFAT from
+http://ltfat.sourceforge.net/ and unpack the downloaded file. 
+In the AMT, there is a pre-prepared directory /thirdparty/ltfat
+where the LTFAT can be stored and will be automatically recognized by 
+the AMT. Alternatively, set the path to your LTFAT directory to the 
+search path of Matlab/Octave.
+
+To start the AMT, type "amtstart".
+
+The "amtstart" command will add all the necessary
+subdirectories (so please don't add these manually), and will print
+statements telling you which backend you are currently using.
+
+Other packages are required to run all the AMT functionality. See 
+<http://amtoolbox.sourceforge.net/doc/index.php> and "help amtstart" 
+for more details.

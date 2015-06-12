@@ -1,0 +1,60 @@
+# Use GNU Make to process this file.
+
+ifndef EXT
+  EXT=oct
+endif
+
+OCTCC   = $(shell ls comp_*.cc)
+OCTFILES = $(patsubst %.cc,%.$(EXT),$(OCTCC))
+
+MEXFILES = ltfatarghelper.mex block_interface.mex comp_filterbank.mex comp_ifilterbank.mex
+
+INTERFACES = $(OCTFILES)
+
+ifndef NOMEX
+  INTERFACES += $(MEXFILES)
+endif
+
+MKOCTFILE ?= mkoctfile
+
+ifndef LAPACK_LIBS
+LAPACK_LIBS := $(shell $(MKOCTFILE) -p LAPACK_LIBS)
+endif
+
+ifndef BLAS_LIBS
+BLAS_LIBS := $(shell $(MKOCTFILE) -p BLAS_LIBS)
+endif
+
+ifndef FLIBS
+FLIBS := $(shell $(MKOCTFILE) -p FLIBS)
+endif
+
+ifndef FFTW_LIBS
+FFTW_LIBS := $(shell $(MKOCTFILE) -p FFTW_LIBS)
+endif
+
+export CFLAGS := $(shell $(MKOCTFILE) -p CFLAGS) -std=c99
+# export is necessary, otherwise LFLAGS won't have any effect
+# at least on Windows and on Mac
+export LFLAGS := $(shell $(MKOCTFILE) -p LFLAGS) $(FLIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FFTW_LIBS)
+
+include ../src/ostools.mk
+
+all:	$(INTERFACES)
+
+%.$(EXT): %.cc
+	$(MKOCTFILE) -strip -Wall -DNDEBUG -I. -I../src -I../src/thirdparty -L../lib -lltfat -lltfatf $<
+
+%.mex: ../mex/%.c 
+	$(MKOCTFILE) --mex -Wall -DNDEBUG -I../mex -I../src -I../src/thirdparty -L../lib -lltfat -lltfatf $< -o $@ 
+
+ltfatarghelper.mex:
+	$(MKOCTFILE) --mex -Wall -DNDEBUG -I../mex ../src/utils/list.c ../mex/ltfatarghelper.c -o ltfatarghelper.mex
+
+
+clean:
+	$(RM) *.o
+	$(RM) *.$(EXT)
+	$(RM) *.mex
+
+.PHONY: all clean

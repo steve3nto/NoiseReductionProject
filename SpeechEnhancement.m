@@ -84,7 +84,7 @@ Yk2s = magnitudes.^2;
 % Compute all the Bartlett estimates
 Y_bart = Bartlett( y, Fs, L, split_length, overlap_length );
 % Estimate noise PSD
-SigmaN2 = noise_estimation(Y_bart, PH0, alpha);
+SigmaN2 = noise_tracking(Y_bart, PH0, alpha);
 
 % Plot noise and signal PSD
 f = Fs/2*linspace(0,1,size(Y_bart,1)/2+1);
@@ -95,11 +95,16 @@ xlabel('Frequency (Hz)')
 ylabel('PSD of Y and N')
 
 % Apply noise subtraction
-speech = NoiseSubtraction(Y_bart,SigmaN2,phases);
+speech_sub = NoiseSubtraction(Y_bart,SigmaN2,phases);
+speech_wiener = Wiener_filter(Y_bart,magnitudes,SigmaN2,phases);
 % Overlap and Add to recreate speech signal
-filtered_speech = OverlapAdd(speech, split_length, overlap_length, Fs, size(y,1));
-% Listen to filtered speech
-player = audioplayer(filtered_speech,Fs);
+filtered_speech_sub = OverlapAdd(speech_sub, split_length, overlap_length, Fs, size(y,1));
+filtered_speech_wiener = OverlapAdd(speech_wiener, split_length, overlap_length, Fs, size(y,1));
+% Listen to spectral subtraction filtered speech
+player = audioplayer(filtered_speech_sub,Fs);
+player.play;
+% Listen to wiener filtered speech
+player = audioplayer(filtered_speech_wiener,Fs);
 player.play;
 
 %PLOTS AND EVALUATION
@@ -108,6 +113,16 @@ n = y-filtered_speech;
 plot(n);
 SNR = sum(clean.^2)/sum(n.^2);
 SNR = 10*log10(SNR);
+
+% Compute Segmented SNR
+
+% Compute SII
+
+% Compute STOI measure
+stoi_y = taal2011(clean,y,Fs);
+stoi_sub = taal2011(clean,filtered_speech_sub,Fs);
+% 0.3 is the worst score we can get for this signal
+
 %% Test code and debug
 
 % test overlap and add
@@ -133,9 +148,14 @@ title('Single-Sided PSD of Y and N')
 xlabel('Frequency (Hz)')
 ylabel('PSD of Y and N')
 
-speech = NoiseSubtraction(Y_bart,PSD_noise,phases);
+speech_sub_real = NoiseSubtraction(Y_bart,PSD_noise,phases);
+speech_wiener_real = Wiener_filter(Y_bart,magnitudes,PSD_noise,phases);
 % Overlap and Add to recreate speech signal
-filtered_speech_real = OverlapAdd(speech, split_length, overlap_length, Fs, size(y,1));
-% Listen to filtered speech
-player = audioplayer(filtered_speech_real,Fs);
+filtered_speech_sub_real = OverlapAdd(speech_sub_real, split_length, overlap_length, Fs, size(y,1));
+filtered_speech_wiener_real = OverlapAdd(speech_wiener_real, split_length, overlap_length, Fs, size(y,1));
+% Listen to subtraction filtered speech
+player = audioplayer(filtered_speech_sub_real,Fs);
+player.play;
+% Listen to wiener filtered speech
+player = audioplayer(filtered_speech_wiener_real,Fs);
 player.play;
