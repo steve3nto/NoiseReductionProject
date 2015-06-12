@@ -102,7 +102,12 @@ filtered_speech = OverlapAdd(speech, split_length, overlap_length, Fs, size(y,1)
 player = audioplayer(filtered_speech,Fs);
 player.play;
 
-
+%PLOTS AND EVALUATION
+plot(filtered_speech);
+n = y-filtered_speech;
+plot(n);
+SNR = sum(clean.^2)/sum(n.^2);
+SNR = 10*log10(SNR);
 %% Test code and debug
 
 % test overlap and add
@@ -116,7 +121,7 @@ plot(y - filtered_speech, 'r');
 % Test spectral subtraction with real PSD noise
 P_clean = sum(clean.^2);
 P_noise = sum(noise.^2);
-SNR = 10*log10(P_clean / P_noise);
+SNR_original = 10*log10(P_clean / P_noise);
 PSD_noise = Bartlett( noise, Fs, L, split_length, overlap_length);
 
 % Plot noise and signal PSD
