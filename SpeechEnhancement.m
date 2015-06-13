@@ -79,18 +79,18 @@ magnitudes = abs(ffts);
 phases = angle(ffts);
 Yk2s = magnitudes.^2;
 
-% Compute Welch estimates
-Y_welch = Welch( y, Fs, L, split_length, overlap_length );
-%Y_bart = Yk2s;
+% Compute all the Bartlett estimates
+% Y_bart = Bartlett( y, Fs, L, split_length, overlap_length );
+Y_bart = Yk2s;
 
 % Estimate noise PSD
-SigmaN2 = noise_tracking(Y_welch, PH0, alpha);
+SigmaN2 = noise_tracking(Y_bart, PH0, alpha);
 % Estimate noise PSD using MMSE tracking with low complexity
-SigmaN2 = Noise_estimation(Y_welch, 0.98, 0.8);
+SigmaN2 = Noise_estimation(Y_bart, 0.98, 0.8);
 % Estimate noise PSD using probability SPP method
-SigmaN2 = noise_psd(Y_welch);
+SigmaN2 = noise_psd(Y_bart);
 % New method
-SigmaN2 = noise_estimation_new(Y_welch,0.5,0.8);
+SigmaN2 = noise_estimation_new(Y_bart,0.5,0.8);
 
 % OPTIONAL! Smooth the estimate over time in the Bartlett way
 for i=L:size(SigmaN2,2)
@@ -98,17 +98,17 @@ for i=L:size(SigmaN2,2)
 end
 
 % Plot noise and signal PSD
-f = Fs/2*linspace(0,1,size(Y_welch,1)/2+1);
+f = Fs/2*linspace(0,1,size(Y_bart,1)/2+1);
 figure;
-plot(f,Y_welch(1:size(Y_welch,1)/2+1,1000),'g',f,SigmaN2(1:size(SigmaN2,1)/2+1,1000),'r'); 
+plot(f,Y_bart(1:size(Y_bart,1)/2+1,1000),'g',f,SigmaN2(1:size(SigmaN2,1)/2+1,1000),'r'); 
 title('Single-Sided PSD of Y and N')
 xlabel('Frequency (Hz)')
 ylabel('PSD of Y and N')
 
 % Apply noise subtraction
-speech_sub = NoiseSubtraction(Y_welch,SigmaN2,phases);
+speech_sub = NoiseSubtraction(Y_bart,SigmaN2,phases);
 % Apply Wiener Filter
-speech_wiener = Wiener_filter(Y_welch,magnitudes,SigmaN2,phases);
+speech_wiener = Wiener_filter(Y_bart,magnitudes,SigmaN2,phases);
 % Overlap and Add to recreate speech signal
 filtered_speech_sub = OverlapAdd(speech_sub, split_length, overlap_length, Fs, size(y,1));
 filtered_speech_wiener = OverlapAdd(speech_wiener, split_length, overlap_length, Fs, size(y,1));
@@ -181,19 +181,19 @@ plot(y - filtered_speech, 'r');
 P_clean = sum(clean.^2);
 P_noise = sum(noise.^2);
 SNR_original = 10*log10(P_clean / P_noise);
-PSD_noise = Welch( noise, Fs, L, split_length, overlap_length);
+PSD_noise = Bartlett( noise, Fs, L, split_length, overlap_length);
 
 % Plot noise and signal PSD
 figure;
-plot(f,Y_welch(1:size(Y_welch,1)/2+1,1000),'b');
+plot(f,Y_bart(1:size(Y_bart,1)/2+1,1000),'b');
 hold on;
 plot(f,PSD_noise(1:size(PSD_noise,1)/2+1,1000),'r'); 
 title('Single-Sided PSD of Y and N')
 xlabel('Frequency (Hz)')
 ylabel('PSD of Y and N')
 
-speech_sub_real = NoiseSubtraction(Y_welch,PSD_noise,phases);
-speech_wiener_real = Wiener_filter(Y_welch,magnitudes,PSD_noise,phases);
+speech_sub_real = NoiseSubtraction(Y_bart,PSD_noise,phases);
+speech_wiener_real = Wiener_filter(Y_bart,magnitudes,PSD_noise,phases);
 % Overlap and Add to recreate speech signal
 filtered_speech_sub_real = OverlapAdd(speech_sub_real, split_length, overlap_length, Fs, size(y,1));
 filtered_speech_wiener_real = OverlapAdd(speech_wiener_real, split_length, overlap_length, Fs, size(y,1));

@@ -3,7 +3,7 @@
 % yk_2 is the squared magnitude of the noisy signal DFT
 % alpha is the update parameter for the output
 % SigmaN2 is the estimated noise PSD for every time window l
-function SigmaN2 = noise_estimation_new(yk_2, PH0, alpha)
+function SigmaN2 = noise_estimation_new(y, PH0, alpha)
     
 
 
