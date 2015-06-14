@@ -4,6 +4,8 @@ function Y_bart = Bartlett( y, fs, L, spl, ovl )
 % y is the signal
 % Fs is the sampling frequency of the signal y
 % L is the number of subsequent periodograms being averaged
+% spl is the length of the window in milliseconds
+% ovl is the overlap length in milliseconds
 % Y_bart is a matrix containing the estimates for every window as a column
 windows = split_hanning(y,spl,ovl,fs);
 ffts = fft(windows);

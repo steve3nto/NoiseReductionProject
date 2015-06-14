@@ -80,8 +80,13 @@ phases = angle(ffts);
 Yk2s = magnitudes.^2;
 
 % Compute all the Bartlett estimates
-% Y_bart = Bartlett( y, Fs, L, split_length, overlap_length );
-Y_bart = Yk2s;
+Y_bart = Bartlett( y, Fs, L, split_length, overlap_length );
+
+% try matlab implementation for power spectrum
+for t=1:size(windows,2)
+    Pyy(:,t) = pwelch(windows(:,t),[],[],320,'twosided');
+end
+Y_bart = Pyy;
 
 % Estimate noise PSD
 SigmaN2 = noise_tracking(Y_bart, PH0, alpha);
@@ -92,18 +97,30 @@ SigmaN2 = noise_psd(Y_bart);
 % New method
 SigmaN2 = noise_estimation_new(Y_bart,0.5,0.8);
 
-% OPTIONAL! Smooth the estimate over time in the Bartlett way
-for i=L:size(SigmaN2,2)
-     SigmaN2(:,i) = mean(SigmaN2(:,i-L+1:i),2);
-end
+%Test voicebox implementation
+[Noise_PSD,state] = estnoiseg(Y_bart',0.02);
+SigmaN2 = Noise_PSD';
 
-% Plot noise and signal PSD
+% OPTIONAL! Smooth the estimate over time in the Bartlett way
+% for i=L:size(SigmaN2,2)
+%      SigmaN2(:,i) = mean(SigmaN2(:,i-L+1:i),2);
+% end
+
+
+
+% Plot noise and signal PSD of time window num_window
+num_window = 5;
 f = Fs/2*linspace(0,1,size(Y_bart,1)/2+1);
 figure;
-plot(f,Y_bart(1:size(Y_bart,1)/2+1,1000),'g',f,SigmaN2(1:size(SigmaN2,1)/2+1,1000),'r'); 
+plot(f,Y_bart(1:size(Y_bart,1)/2+1,num_window),'g',...
+     f,SigmaN2(1:size(SigmaN2,1)/2+1,num_window),'r');
+% Plot Y_PSD vs PSD_noise computed from the real noise
+hold on
+plot(f,PSD_noise(1:size(PSD_noise,1)/2+1,num_window),'b');
 title('Single-Sided PSD of Y and N')
 xlabel('Frequency (Hz)')
 ylabel('PSD of Y and N')
+
 
 % Apply noise subtraction
 speech_sub = NoiseSubtraction(Y_bart,SigmaN2,phases);

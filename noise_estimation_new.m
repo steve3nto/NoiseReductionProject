@@ -1,27 +1,16 @@
-%PH0 is row vector in which each element correspond to probability of absence
-%of speech for every frame l
-% yk_2 is the squared magnitude of the noisy signal DFT
-% alpha is the update parameter for the output
-% SigmaN2 is the estimated noise PSD for every time window l
-function SigmaN2 = noise_estimation_new(y, PH0, alpha)
+function SigmaN2 = noise_estimation_new(yk_2, PH0, alpha)
     
 
 
-% Keep first time window as noise
-     SigmaN2(:,1) = yk_2(:,1);
+% Keep first 5 time windows as noise
+     SigmaN2(:,1:5) = yk_2(:,1:5);
 
-%     SNR(:,2) = yk_2(:,2)./SigmaN2(:,1) - 1;
-%     pyH0(:,2) = exp(-abs(yk_2(:,2))./SigmaN2(:,1))./(SigmaN2(:,1).*pi);
-%     pyH1(:,2) = exp(-abs(yk_2(:,2))./(SigmaN2(:,1).*(1+SNR(:,2))))./(SigmaN2(:,1).*pi.*(1+SNR(:,2)));
-%     % Use Bayes rule to compute PH | Y
-%     PH0y(:,2) = PH0.*pyH0(:,2) ./ (PH0.*pyH0(:,2) + (1-PH0).*pyH1(:,2));
-%     PH1y(:,2) = ones(size(PH0y,1),1) - PH0y(:,2);
       one=ones(size(yk_2,1),1);
       SNR=10.^1.5;
       S=SNR/(1+SNR);
       S=S*one;
 
-    for i=2:size(yk_2,2)
+    for i=6:size(yk_2,2)
         % SNR(:,i) = yk_2(:,i)./SigmaN2(:,i-1) - 1;
 
        % pyH0(:,i) = exp(-abs(yk_2(:,i))./SigmaN2(:,i-1))./(SigmaN2(:,i-1).*pi);
