@@ -125,7 +125,7 @@ else
      % loop for each frame
      for t=1:nr
          yft=yf(t,:);        % noisy speech power spectrum
-         ph1y=(1+pfac*exp(xih1r*yft./xt)).^(-1); % a-posteriori speech presence prob (18)
+         ph1y=(1+pfac*exp(-xih1r*yft./xt)).^(-1); % a-posteriori speech presence prob (18)
          pslp=ap*pslp+apc*ph1y; % smoothed speech presence prob (23)
          ph1y=min(ph1y,1-pnsaf*(pslp>psthr)); % limit ph1y (24)
          xtr=(1-ph1y).*yft+ph1y.*xt; % estimated raw noise spectrum (22)

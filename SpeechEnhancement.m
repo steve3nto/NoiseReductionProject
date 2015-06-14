@@ -2,8 +2,8 @@
 
 %-----------------PARAMETERS GO HERE-------------------------%
 NFFT = 2^14;            % number of points for the FFT of the whole signal
-split_length = 20;      % window length in ms
-overlap_length = 10;     % overlap between windows in ms
+split_length = 32;      % window length in ms
+overlap_length = 16;     % overlap between windows in ms
 L = 10;                 % number of Bartlett averaging windows;
 PH0 = 0.5;              % prior probability of having no speech
 alpha = 0.8;            % update parameter for PSD estimation
@@ -12,9 +12,13 @@ alpha = 0.8;            % update parameter for PSD estimation
 % Load audio. Wav sampled at 16 KHz
 [clean, Fs] = wavread('clean');
 
-noise = wavread('noise1');
+noise = wavread('noise1');  % modulated speech-like noise (SNR = -5.00dB)
 white_noise = randn(size(noise));
-noise = 0.1*white_noise;  % This give an SNR of approximately -5dB
+
+% noise = 0.1*white_noise;  % white noise (SNR = -5.38dB)
+
+% noise = wavread('intersection_soundjay');  % car noise 
+% noise = 2*noise(1:size(clean,1));          % SNR = -5.66dB
 
 Ts = 1/Fs;
 % Create noisy speech Y
@@ -22,6 +26,14 @@ y = clean + noise;
 % Listen to noisy speech
 player = audioplayer(y,Fs);
 player.play;
+
+% Compute SNR
+P_clean = sum(clean.^2);
+P_noise = sum(noise.^2);
+SNR_original = 10*log10(P_clean / P_noise);
+% Bartlett estimate of the real noise PSD (used later for test and plots)
+PSD_noise = Bartlett( noise, Fs, L, split_length, overlap_length);
+PSD_noisedb = 10*log10(PSD_noise);
 
 % Visualize time domain signals
 figure('name','time-domain signals');
@@ -34,42 +46,42 @@ title('noise(t)');
 figure('name','noisy signal');
 plot(y);
 
-% Compute DFTs
-Y = fft(y,NFFT);
-N = fft(noise,NFFT);
-S = fft(clean,NFFT);
-f = Fs/2*linspace(0,1,NFFT/2+1);   %single-sided frequency axis in Hz
-% Visualize magnitude of clean speech and noise
-figure;
-plot(f,20.*log10(abs(S(1:NFFT/2+1))))
-hold on;
-plot(f,20.*log10(abs(N(1:NFFT/2+1))),'r')
-title('Single-Sided Amplitude Spectrum of s(t) and n(t) in red')
-xlabel('Frequency (Hz)')
-ylabel('|S(f)|')
-% Visualize phase of clean speech and noise
-figure;
-plot(f,unwrap(angle(S(1:NFFT/2+1))));
-hold on;
-plot(f,unwrap(angle(N(1:NFFT/2+1))),'r');
-title('Single-Sided Phase Spectrum of s(t) and n(t) in red')
-xlabel('Frequency (Hz)')
-ylabel('Arg(S(f))')
-% Visualize magnitude of Y
-figure;
-plot(f,20.*log10(abs(Y(1:NFFT/2+1)))) 
-title('Single-Sided Amplitude Spectrum of y(t)')
-xlabel('Frequency (Hz)')
-ylabel('|Y(f)|')
-% Visualize phase of Y
-figure;
-plot(f,unwrap(angle(Y(1:NFFT/2+1))));
-title('Single-Sided Phase Spectrum of y(t)')
-xlabel('Frequency (Hz)')
-ylabel('Arg(Y(f))')
-% Store noisy phase for later
-phase = angle(Y);
-noisy_magnitude = abs(Y);
+% % Compute DFTs
+% Y = fft(y,NFFT);
+% N = fft(noise,NFFT);
+% S = fft(clean,NFFT);
+% f = Fs/2*linspace(0,1,NFFT/2+1);   %single-sided frequency axis in Hz
+% % Visualize magnitude of clean speech and noise
+% figure;
+% plot(f,20.*log10(abs(S(1:NFFT/2+1))))
+% hold on;
+% plot(f,20.*log10(abs(N(1:NFFT/2+1))),'r')
+% title('Single-Sided Amplitude Spectrum of s(t) and n(t) in red')
+% xlabel('Frequency (Hz)')
+% ylabel('|S(f)|')
+% % Visualize phase of clean speech and noise
+% figure;
+% plot(f,unwrap(angle(S(1:NFFT/2+1))));
+% hold on;
+% plot(f,unwrap(angle(N(1:NFFT/2+1))),'r');
+% title('Single-Sided Phase Spectrum of s(t) and n(t) in red')
+% xlabel('Frequency (Hz)')
+% ylabel('Arg(S(f))')
+% % Visualize magnitude of Y
+% figure;
+% plot(f,20.*log10(abs(Y(1:NFFT/2+1)))) 
+% title('Single-Sided Amplitude Spectrum of y(t)')
+% xlabel('Frequency (Hz)')
+% ylabel('|Y(f)|')
+% % Visualize phase of Y
+% figure;
+% plot(f,unwrap(angle(Y(1:NFFT/2+1))));
+% title('Single-Sided Phase Spectrum of y(t)')
+% xlabel('Frequency (Hz)')
+% ylabel('Arg(Y(f))')
+% % Store noisy phase for later
+% phase = angle(Y);
+% noisy_magnitude = abs(Y);
 
 % Segment the signals using hanning windows and apply fft
 windows = split_hanning(y,split_length,overlap_length,Fs);
@@ -83,44 +95,45 @@ Yk2s = magnitudes.^2;
 Y_bart = Bartlett( y, Fs, L, split_length, overlap_length );
 
 % try matlab implementation for power spectrum
-for t=1:size(windows,2)
-    Pyy(:,t) = pwelch(windows(:,t),[],[],320,'twosided');
-end
-Y_bart = Pyy;
+% for t=1:size(windows,2)
+%     Pyy(:,t) = pwelch(windows(:,t),[],[],512,'twosided');
+% end
+% Y_bart = Pyy;
+
+% % Estimate noise PSD
+% SigmaN2 = noise_tracking(Y_bart, PH0, alpha);
+% % Estimate noise PSD using MMSE tracking with low complexity
+% SigmaN2 = Noise_estimation(Y_bart, 0.98, 0.8);
+% % Estimate noise PSD using probability SPP method
+% SigmaN2 = noise_psd(Y_bart);
 
 % Estimate noise PSD
-SigmaN2 = noise_tracking(Y_bart, PH0, alpha);
-% Estimate noise PSD using MMSE tracking with low complexity
-SigmaN2 = Noise_estimation(Y_bart, 0.98, 0.8);
-% Estimate noise PSD using probability SPP method
-SigmaN2 = noise_psd(Y_bart);
-% New method
-SigmaN2 = noise_estimation_new(Y_bart,0.5,0.8);
+% New method based on the last paper by Hendricks and Gerkmann
+SigmaN2 = noise_estimation_new(Yk2s,0.5,0.8,0.05);
 
 %Test voicebox implementation
-[Noise_PSD,state] = estnoiseg(Y_bart',0.02);
-SigmaN2 = Noise_PSD';
+% [Noise_PSD,state] = estnoiseg(Yk2s',0.02);
+% SigmaN2 = Noise_PSD';
 
 % OPTIONAL! Smooth the estimate over time in the Bartlett way
 % for i=L:size(SigmaN2,2)
 %      SigmaN2(:,i) = mean(SigmaN2(:,i-L+1:i),2);
 % end
 
-
-
 % Plot noise and signal PSD of time window num_window
-num_window = 5;
-f = Fs/2*linspace(0,1,size(Y_bart,1)/2+1);
+num_window = 2000;
+f = Fs/2*linspace(0,1,size(Yk2s,1)/2+1);
 figure;
-plot(f,Y_bart(1:size(Y_bart,1)/2+1,num_window),'g',...
-     f,SigmaN2(1:size(SigmaN2,1)/2+1,num_window),'r');
+Yk2sdb = 10*log10(Yk2s);
+SigmaN2db = 10*log10(SigmaN2);
+plot(f,Yk2sdb(1:size(Yk2s,1)/2+1,num_window),'g',...
+     f,SigmaN2db(1:size(SigmaN2,1)/2+1,num_window),'r');
 % Plot Y_PSD vs PSD_noise computed from the real noise
 hold on
-plot(f,PSD_noise(1:size(PSD_noise,1)/2+1,num_window),'b');
+plot(f,PSD_noisedb(1:size(PSD_noise,1)/2+1,num_window),'b');
 title('Single-Sided PSD of Y and N')
 xlabel('Frequency (Hz)')
 ylabel('PSD of Y and N')
-
 
 % Apply noise subtraction
 speech_sub = NoiseSubtraction(Y_bart,SigmaN2,phases);
@@ -171,20 +184,8 @@ stoi_y = taal2011(clean,y,Fs);
 stoi_sub = taal2011(clean,filtered_speech_sub,Fs);
 stoi_wiener = taal2011(clean,filtered_speech_wiener,Fs);
 
-% 0.3 is the worst score we can get for this signal
-% best sub stoi = 0.5309
-% best wiener stoi = 0.6396
-% best sub segSNR = 0.3055      ??????
-% best wiener segSNR = -0.8342   ??????
 
-% results with white noise
-
-% best sub stoi = 0.5518
-% best wiener stoi = 0.6677
-% best sub segSNR = 0.5116      ??????
-% best wiener segSNR = 0.0390   ??????
-
-%% Test code and debug
+%% ---------Test code and debug - OPTIONAL! ---------------------------%
 
 % test overlap and add
 windows = split_hanning(y, split_length, overlap_length, Fs);
@@ -194,21 +195,7 @@ plot(y);
 hold on;
 plot(y - filtered_speech, 'r');
 
-% Test spectral subtraction with real PSD noise
-P_clean = sum(clean.^2);
-P_noise = sum(noise.^2);
-SNR_original = 10*log10(P_clean / P_noise);
-PSD_noise = Bartlett( noise, Fs, L, split_length, overlap_length);
-
-% Plot noise and signal PSD
-figure;
-plot(f,Y_bart(1:size(Y_bart,1)/2+1,1000),'b');
-hold on;
-plot(f,PSD_noise(1:size(PSD_noise,1)/2+1,1000),'r'); 
-title('Single-Sided PSD of Y and N')
-xlabel('Frequency (Hz)')
-ylabel('PSD of Y and N')
-
+% Test spectral subtraction and Wiener filter with real PSD noise
 speech_sub_real = NoiseSubtraction(Y_bart,PSD_noise,phases);
 speech_wiener_real = Wiener_filter(Y_bart,magnitudes,PSD_noise,phases);
 % Overlap and Add to recreate speech signal
